@@ -1,0 +1,44 @@
+#include <linux/kernel.h>
+#include <linux/syscalls.h>
+
+SYSCALL_DEFINE0(identity)
+
+{
+    printk("Hello World!\n");
+    return 0;
+}
+
+
+
+
+#include <linux/kernel.h>
+#include <sys/syscall.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <errno.h>
+
+#define __NR_identity 440
+
+long identity_syscall(void)
+{
+    return syscall(__NR_identity);
+}
+
+int main(int argc, char *argv[])
+{
+    long activity;
+    activity = identity_syscall();
+
+    if(activity < 0)
+    {
+        perror("System failed.");
+    }
+
+    else
+    {
+        printf("System is ok.\n");
+    }
+
+    return 0;
+}

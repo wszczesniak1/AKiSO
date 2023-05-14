@@ -1,0 +1,161 @@
+ #!/bin/bash
+rm wykres.txt
+touch wykres.txt
+valueRecivePrev=0
+valueTransmitPrev=0
+totalUsagePrev=(0 0 0 0)
+prevIdle=(0 0 0 0)
+while :
+do     
+    #aktualna prędkość wysyłania i odbierania danych
+    line=`cat /proc/net/dev | grep "enp0s3"`
+    lineTab=($line)
+    valueRecive=`expr ${lineTab[1]}`
+    valueTransmit=`expr ${lineTab[9]}`
+    differenceRecive=$((valueRecive-valueRecivePrev))
+    differenceTransmit=$((valueTransmit-valueTransmitPrev))
+    unitR="B/s"
+    unitT="B/s"
+    
+    #wykres  potem pętla która dla wartości wypisuje kreseczkę ileś razy
+    numberLines=`wc -l < wykres.txt`
+    if [[ numberLines -ge 10 ]]
+    then
+   	 sed -i '1d' wykres.txt
+    fi
+    echo $differenceTransmit>>wykres.txt
+    
+    #pętle do dobrania odpowiednich jednostek
+    if [[ differenceRecive -ge 1024 ]]
+    then
+   	 dR1=$(($differenceRecive/1024))
+   	 unitR="KB/s"
+    elif [[ differenceRecive -ge 1048576 ]]
+    then
+   	 dR1=$(($differenceRecive/1048576))
+   	 unitR="MB/s"   	 
+    else
+   	 dR1=$differenceRecive
+    fi
+    
+    if [[ differenceTransmit -ge 1024 ]]
+    then
+   	 dT1=$(($differenceTransmit/1024))
+   	 unitT="KB/s"
+    elif [[ differenceTransmit -ge 1048576 ]]
+    then
+   	 dT1=$(($differenceTransmit/1048576))
+   	 unitT="MB/s"
+    else
+   	 dT1=$differenceTransmit
+    fi
+    
+    valueRecivePrev=$valueRecive
+    valueTransmitPrev=$valueTransmit
+    
+    
+    #mam 4 rdzenie
+    cpu0=(`cat /proc/stat | grep "cpu0"`)
+    cpu1=(`cat /proc/stat | grep "cpu1"`)
+    cpu2=(`cat /proc/stat | grep "cpu2"`)
+    cpu3=(`cat /proc/stat | grep "cpu3"`)
+    totalCpuTab=(0 0 0 0)
+    totalCpuTab[0]=$((${cpu0[10]}+${cpu0[1]}+${cpu0[2]}+${cpu0[3]}+${cpu0[4]}+${cpu0[5]}+${cpu0[6]}+${cpu0[7]}+${cpu0[8]}+${cpu0[9]}))
+    totalCpuTab[1]=$((${cpu1[10]}+${cpu1[1]}+${cpu1[2]}+${cpu1[3]}+${cpu1[4]}+${cpu1[5]}+${cpu1[6]}+${cpu1[7]}+${cpu1[8]}+${cpu1[9]}))
+    totalCpuTab[2]=$((${cpu2[10]}+${cpu2[1]}+${cpu2[2]}+${cpu2[3]}+${cpu2[4]}+${cpu2[5]}+${cpu2[6]}+${cpu2[7]}+${cpu2[8]}+${cpu2[9]}))
+    totalCpuTab[3]=$((${cpu3[10]}+${cpu3[1]}+${cpu3[2]}+${cpu3[3]}+${cpu3[4]}+${cpu3[5]}+${cpu3[6]}+${cpu3[7]}+${cpu3[8]}+${cpu3[9]}))
+    idleTab=(0 0 0 0)
+    idleTab[0]=${cpu0[4]}
+    idleTab[1]=${cpu1[4]}
+    idleTab[2]=${cpu2[4]}
+    idleTab[3]=${cpu3[4]}
+    
+    #aktualna częstotliwość pracy rdzenia procesora
+    cpuSpeed=`cat /proc/cpuinfo | grep Hz`
+    
+    #czas uruchomienia
+    time=(`cat /proc/uptime`)
+    time=${time[0]%.*}
+    
+    #średnia prędkość odbierania i wysyłania danych z sieci
+    averageT=$(( $valueTransmit/$time))
+    averageR=$(( $valueRecive/$time))
+    unitAT="B/s"
+    unitAR="B/s"
+    if [[ averageT -ge 1024 ]]
+    then
+   	 averageT=$(($averageT/1024))
+   	 unitAT="KB/s"
+    elif [[ averageT -ge 1048576 ]]
+    then
+   	 averageT=$(($averageT/1048576))
+   	 unitAT="MB/s"   	 
+    else
+   	 averageT=$averageT
+    fi
+    
+    if [[ averageR -ge 1024 ]]
+    then
+   	 averageR=$(($averageR/1024))
+   	 unitAR="KB/s"
+    elif [[ averageR -ge 1048576 ]]
+    then
+   	 averageR=$(($averageR/1048576))
+   	 unitAR="MB/s"
+    else
+   	 averageR=$averageR
+    fi
+    
+    #dalej czas
+    day=$((time/86400))
+    time=$((time-(day * 86400)))
+    hour=$((time/3600))
+    time=$((time-(hour * 3600)))
+    minute=$((time/60))
+    time=$((time-(minute*60)))
+   	 
+    #nie ma baterii
+    #obciążenie systemu
+    loadavg=(`cat /proc/loadavg`)
+    
+
+    clear
+    echo "Days: $day Hours: $hour Minutes: $minute Seconds: $time"
+    echo "Loadavg: ${loadavg[0]} ${loadavg[1]} ${loadavg[2]}"
+    echo "$dR1 $unitR $dT1 $unitT "
+    echo "Average speed Transmit: $averageT $unitAT Recive: $averageR $unitAR"
+    echo "Current CPU frequency:"
+    echo "$cpuSpeed"
+    echo "Current CPU usage:"
+    for i in {0..3}
+    do
+   	 echo "${idleTab[i]} ${prevIdle[i]} ${totalCpuTab[i]} ${totalUsagePrev[i]} cpu$i" | awk '{print $5,(1-(($1-$2)/($3-$4)))*100 " %"}'
+   	 prevIdle[i]=${idleTab[i]}
+   	 totalUsagePrev[i]=${totalCpuTab[i]}
+    done
+    
+    #wykrescd
+    max=0
+    echo "Wykres:"
+    while read values;
+    do    
+   	 if [[ $values -gt max ]]
+   	 then
+   		 max=$values
+   	 fi
+   	 
+   	 if [[ max -ne 0 ]]
+   	 then
+   		 for (( l=0; l < (130*$values)/$max; l++ ))
+   		 do
+   			 printf "|"
+   	 
+   		 done
+   	 fi
+   	 printf "\n"
+    done<wykres.txt
+    
+    
+    sleep 1
+
+done

@@ -1,0 +1,15 @@
+#!/bin/bash
+touch FileForValues.txt
+echo "pid|state|ppid|pgid|sid|tty|rss|comm|nrOfFiles">>FileForValues.txt
+for dir in `find /proc -maxdepth 1 -type d -name '*[0,9]*'`
+do    
+    line=`cat /$dir/stat`
+    name=`echo "$line" | awk -F[\(\)] '{print $2}'`
+    name="($name)"
+    lineAD=${line/$name}
+    table=($lineAD)
+    numberFiles=`ls /$dir/fd/ | wc -l`
+    echo "${table[0]}|${table[1]}|${table[2]}|${table[3]}|${table[4]}|${table[6]}|${table[22]}|$name|$numberFiles">>FileForValues.txt
+done
+column -t -s "|" FileForValues.txt
+rm FileForValues.txt

@@ -1,0 +1,17 @@
+Zad1 
+#include <stdio.h>
+#include <unistd.h>
+
+int main () {
+	char *name[2];
+	name[0] = "bash";
+	name[1] = NULL;
+	//set the real user ID
+	setuid(0);
+	execvp("/bin/bash", name);
+}
+
+// changing the ownership to user:group of Zad1Lista4
+//sudo chown root:root Zad1Lista4
+// set user or group ID on execution
+// sudo chmod +s Zad1Lista4

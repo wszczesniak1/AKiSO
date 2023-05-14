@@ -1,0 +1,5 @@
+#!/bin/bash
+CAT_IMG_URL=$(curl https://api.thecatapi.com/v1/images/search | jq -r '.[].url')
+CHUCK_NORRIS_JOKE=$(curl https://api.chucknorris.io/jokes/random | jq '.value')
+echo $CHUCK_NORRIS_JOKE
+feh $CAT_IMG_URL

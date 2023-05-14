@@ -1,0 +1,53 @@
+Zad2
+//1)Nie można, nie jest możliwe obsłużenie sygnałów SIGSTOP i SIGSTOP
+//2)Nie, operacja jest niedozwolona. Init jest jedynym procesem który nie odbiera sygnałów.
+
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+
+struct sigaction siga;
+
+void f(int sig) {
+	printf("Sygnał %d dotarl\n", sig);
+}
+
+void function(void(*f)(int sig)) {
+	// określa akcji w przypadku użycia sygnału
+	siga.sa_handler = f;
+	for(int sig = 1; sig <= SIGRTMAX; ++sig) {
+    	printf("%d\n", sig);
+    	//sigaction zwraca -1 gdy nie przejmuje sygnału
+    	//nr sygnału, pointer na akcję dla sygnału, wskazanie na starą akcję
+    	if (sigaction(sig, &siga, NULL) == -1) {
+        	printf("Nie dotarl sygnał %d\n", sig);
+    	}
+	}
+}
+
+int main() {
+	function(f);
+	pause();
+	return 0;
+}
+
+
+Zad 2 podpunkt 3
+
+//3)tak, można kolejkować wiele egzemplarzy czasu rzeczywistego,
+#include <stdio.h>
+#include <signal.h>
+
+int main() {
+	int counter = 0;
+	for(int i = 0; i < 10000; i++) {
+    	if(kill(805 , 10) == 0) {
+        	counter++;
+    	}
+    	else {
+        	printf("Nie dotarł");
+    	}
+	}
+	printf("%d\n",counter);
+	return 0;
+}

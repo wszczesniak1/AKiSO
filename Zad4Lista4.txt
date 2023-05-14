@@ -1,0 +1,38 @@
+#!/bin/bash
+files=$(find $1 -type f)
+tabName=()
+tabHash=()
+tabSize=()
+sameFiles=()
+
+#dodaje dane do tablic
+for eachfile in $files
+do
+    tabName+=("$eachfile")
+    tabHash+=("$(sha256sum $eachfile | cut -d ' ' -f 1)")
+    tabSize+=("$(stat --printf="%s" $eachfile)")
+done
+
+sameFiles+=($(
+for i1 in "${!tabHash[@]}";
+do
+    for i2 in "${!tabHash[@]}";
+    do
+        if [[ $i1 < $i2 ]]; 
+	then
+            if [[ "${tabHash[$i1]}" == "${tabHash[$i2]}" ]]; 
+	    then
+                echo ${tabSize[i1]}KB";"${tabName[i1]}";"${tabName[i2]}
+            fi
+        fi
+    done
+done | sort -t ';' -k1 -n -r
+))
+
+(echo "Rozmiar;Plik1;Plik2"
+for x in "${!sameFiles[@]}"
+do
+    echo ${sameFiles[x]} 
+
+
+done) | column -t -s ";"

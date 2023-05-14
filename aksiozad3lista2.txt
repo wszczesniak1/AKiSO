@@ -1,0 +1,70 @@
+﻿Clear
+Store result
+Input
+Store X
+Input
+Store Y
+
+Load Y
+Skipcond 000
+Jump nonneg
+
+Subt Y
+Subt Y
+Store Y
+Clear
+Add one
+Store negflag
+Clear
+Jump loop
+
+nonneg,  Clear
+         Store negflag
+         / check if Y is zero, if it is, then we jump to halt
+         Load Y
+         Skipcond 400
+         Jump loop / false
+         Jump haltzero / true
+
+/ Loop for performing iterative addition
+loop,    Load X
+         Subt Y         
+         Store X
+
+         Load result
+         Add one
+         Store result
+         
+		 Load X
+         Subt Y
+         Skipcond 000 / have we completed division?
+         Jump loop / no; repeat loop
+         / yes, so exit the loop
+        
+
+/ check for negative flag, if it is set, negate the result
+Load negflag
+Skipcond 800
+Jump halt
+
+/ negate result
+Load result
+Subt result
+Subt result
+Store result
+/ run the next three instructions, which halts the program
+
+/ Output result to user then halt program
+halt,    Load result
+         Output	
+         Load X
+         Output
+         Halt
+         
+haltzero,    Halt      
+
+X, DEC 0
+Y, DEC 0
+one, DEC 1
+negflag, DEC 0
+result, DEC 0
